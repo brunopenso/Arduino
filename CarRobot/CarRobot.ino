@@ -6,13 +6,18 @@ int trigPin = 13;//ultra sensor send sound wave
 int echoPin = 11; //ultra sensor receive sound wave
 int greenLed = 2;
 int redLed = 3;
-int maximumRange = 20; //20 cm
-int minTime = 50;
-int turn = 2500;// i`m supposing that 2 seconds is enough to turn 90 degress
-int timeBack = 3000;
+int maximumRange = 30; //20 cm
+int minTime = 10;
+int turn = 2000;// i`m supposing that 2 seconds is enough to turn 90 degress
+int timeBack = 2000;
+
+bool showLog = false;
+int logDelay = 500;
 void setup() {
-  Serial.begin (9600);
   stopMotor();
+  
+  Serial.begin (9600);
+  
   pinMode(trigPin, OUTPUT);
   pinMode(echoPin, INPUT);
   pinMode(greenLed, OUTPUT);     
@@ -20,7 +25,7 @@ void setup() {
   
   digitalWrite(greenLed, HIGH);
   digitalWrite(redLed, HIGH);
-  delay(2000);
+  delay(5000);
   digitalWrite(greenLed, LOW);
   digitalWrite(redLed, LOW);
 }
@@ -33,6 +38,9 @@ void loop() {
     debug("avoind obstacle");
     avoidObstacle();
   }
+
+  stopMotor();
+  delay(1000);
 }
 
 void goForward() {
@@ -77,14 +85,18 @@ void stopMotor() {
 }
 
 void debug(String msg) {
-  Serial.println(msg);
-  delay(1000);
+  if (showLog) {
+    Serial.println(msg);
+    delay(logDelay);
+  }
 }
 
 void debug(String msg, long number) {
-  Serial.print(msg + "->");
-  Serial.println(number);
-  delay(1000);
+  if (showLog) {
+    Serial.print(msg + "->");
+    Serial.println(number);
+    delay(logDelay);
+  }
 }
 
 void avoidObstacle() {
@@ -146,10 +158,11 @@ long readDistance() {
   if (distance > maximumRange) {
       digitalWrite(greenLed, HIGH);
   } else {
+    stopMotor();
     digitalWrite(redLed, HIGH);
   }
   //Delay 50ms before next reading.
-  delay(50);
+  delay(20);
   digitalWrite(greenLed, LOW);
   digitalWrite(redLed, LOW);
   return distance;
