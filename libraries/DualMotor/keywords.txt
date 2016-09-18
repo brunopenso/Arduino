@@ -1,0 +1,15 @@
+#######################################
+# Datatypes (KEYWORD1)
+#######################################
+
+DualMotor	KEYWORD1
+
+#######################################
+# Métodos e Funções (KEYWORD2)
+#######################################
+
+M1move	KEYWORD2
+M2move	KEYWORD2
+M1parar	KEYWORD2
+M2parar	KEYWORD2
+
