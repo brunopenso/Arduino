@@ -1,18 +1,22 @@
 #include <DualMotor.h> //Inclui a biblioteca DualMotor.h
 DualMotor dualmotor; //Inst√¢ncia a DualMotor
+// VERSION 3
 // pins used for this shield 5,6,7,8
 // pins used for ultrasensor 13,12,11
 int trigPin = 13;//ultra sensor send sound wave
 int echoPin = 11; //ultra sensor receive sound wave
-int greenLed = 2;
-int redLed = 3;
-int maximumRange = 30; //20 cm
-int minTime = 10;
-int turn = 2000;// i`m supposing that 2 seconds is enough to turn 90 degress
-int timeBack = 2000;
+int greenLed = 2; // green led means that no obstacule was found
+int redLed = 3; // red led means that obstacule was found
 
-bool showLog = false;
-int logDelay = 500;
+int maximumRange = 30; //if distance is less than this value the strategy to avoid will be started
+int minTime = 10; //min time to go forward
+int timeBack = 1500; //when going backwards this time will be considered
+int turnTime = 150; //time to turn for left or right
+int motorSpeed = 255; // define the motor speed angle
+
+bool showLog = false; // when true show log
+int logDelay = 500; // delay time to show logs
+
 void setup() {
   stopMotor();
   
@@ -38,9 +42,6 @@ void loop() {
     debug("avoind obstacle");
     avoidObstacle();
   }
-
-  stopMotor();
-  delay(1000);
 }
 
 void goForward() {
@@ -49,33 +50,44 @@ void goForward() {
     if (!canGo()) {
       break;
     } else {
-      dualmotor.M1move(255, 0);
-      dualmotor.M2move(255, 0);
-      delay(minTime); //enough time make a curve
+      dualmotor.M1move(motorSpeed, 0);
+      dualmotor.M2move(motorSpeed, 0);
+      delay(minTime);
     }
   }
 }
 
 void goBackward() {
   stopMotor();
-  dualmotor.M1move(255, 1);
-  dualmotor.M2move(255, 1);
-  delay(timeBack);
+  goBackward(timeBack);
 }
 
-void turnLeft() {
+void goBackward(int timeTo) {
   stopMotor();
-  dualmotor.M1move(255, 0);
-  //dualmotor.M2move(255, 1);
-  delay(turn); //enough time make a curve
-  stopMotor();
+  dualmotor.M1move(motorSpeed, 1);
+  dualmotor.M2move(motorSpeed, 1);
+  delay(timeTo);
 }
 
-void turnRight() {
+
+void turn() {
   stopMotor();
-  //dualmotor.M1move(255, 1);
-  dualmotor.M2move(255, 0);
-  delay(turn); //enough time make a curve
+  int maxTurns = 5;
+  int strategy = random(0, 2); // values -> 0 - 1
+  debug("turn strategy", strategy);
+  while(!canGo() && maxTurns > 0) {
+    if (strategy == 0) {
+      debug("turning M1");
+      dualmotor.M1move(motorSpeed, 0);
+      //dualmotor.M2move(motorSpeed, 1);    
+    } else {
+      debug("turning M2");
+      //dualmotor.M1move(motorSpeed, 1);
+      dualmotor.M2move(motorSpeed, 0);    
+    }
+    maxTurns--;
+    delay(turnTime);
+  }
   stopMotor();
 }
 
@@ -84,50 +96,27 @@ void stopMotor() {
   dualmotor.M2parar();
 }
 
-void debug(String msg) {
-  if (showLog) {
-    Serial.println(msg);
-    delay(logDelay);
-  }
-}
-
-void debug(String msg, long number) {
-  if (showLog) {
-    Serial.print(msg + "->");
-    Serial.println(number);
-    delay(logDelay);
-  }
-}
-
 void avoidObstacle() {
   stopMotor();
-  int strategy = random(0, 3); // values -> 0 - 2
+  int strategy = random(0, 2); // values -> 0 - 1
   debug("Strategy selected", strategy);
   switch (strategy) {
-    case 0: strategy1(true); break;
-    case 1: strategy1(false); break;
-    case 2: strategy2(); break;
+    case 0: strategy0(); break;
+    case 1: strategy1(); break;
     default: break;
   }
 }
-void strategy1(boolean right) {
-  debug("Strategy 1 started", (right == true));
-  if (right) {
-    debug("turn right");
-    turnRight();
-  } else {
-    debug("turn left");
-    turnLeft();
-  }
-  debug("Strategy 1 finished", (right == true));
+void strategy0() {
+  debug("Strategy 0 started");
+  turn();
+  debug("Strategy 0 finished");
 }
-void strategy2() {
-  debug("Strategy 2 started");
+void strategy1() {
+  debug("Strategy 1 started");
   goBackward();
-  turnLeft();
-  debug("Strategy 2 finished");
+  turn();
+  debug("Strategy 1 finished");
 }
-
 
 boolean canGo() {
   if (readDistance() > maximumRange) {
@@ -166,4 +155,19 @@ long readDistance() {
   digitalWrite(greenLed, LOW);
   digitalWrite(redLed, LOW);
   return distance;
+}
+
+void debug(String msg) {
+  if (showLog) {
+    Serial.println(msg);
+    delay(logDelay);
+  }
+}
+
+void debug(String msg, long number) {
+  if (showLog) {
+    Serial.print(msg + "->");
+    Serial.println(number);
+    delay(logDelay);
+  }
 }
